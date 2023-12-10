@@ -5,13 +5,20 @@ const {connectToMongoDB} = require('./connect');
 const URL = require('./models/url')
 const path = require('path');
 const staticRoute = require('./routes/staticRouter')
+const userRoutes = require('./routes/user')
+const cookieParser = require('cookie-parser')
+const {restrictToLoggedinUserOnly , checkAuth } = require('./middleware/auth')
 
 const PORT = 8001;
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}))
-app.use('/url',urlRoute);
-app.use('/',staticRoute);
+app.use(cookieParser())
+
+app.use('/url',restrictToLoggedinUserOnly,urlRoute);
+app.use('/',checkAuth,staticRoute);
+app.use('/user',userRoutes);
+
 
 
 connectToMongoDB('mongodb://0.0.0.0:27017/short-url')
@@ -37,7 +44,7 @@ app.get('/test' , async (req , res)=>{
 
 
 
-app.get('/:shortId',async (req,res)=>{
+app.get('/url/:shortId',async (req,res)=>{
     const shortId = req.params.shortId;
     const entry = await URL.findOneAndUpdate({
         shortId
